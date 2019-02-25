@@ -12,7 +12,8 @@ license = "MIT"
 # Public Use Metadata
 publish = true
 documentation = "https://docs.rs/sdlang"
-homepage = "https://github.com/araspik/sdlang/blob/master/README.md"
+homepage = "https://github.com/araspik/sdlang.rs/blob/master/README.md"
+repository = "https://github.com/araspik/sdlang.rs"
 readme = "README.md"
 keywords = [
     "formats",
@@ -26,14 +27,12 @@ categories = [
 # Code-specific Metadata
 edition = '2018'
 
-# Workspace
-
 # Public Display Badges
 [badges]
-travis-ci = { repository = "araspik/sdlang", branch = "master" }
-codecov = { repository = "araspik/sdlang", branch = "master", service = "github" }
-is-it-maintained-issue-resolution = { repository = "araspik/sdlang" }
-is-it-maintained-open-issues = { repository = "araspik/sdlang" }
+travis-ci = { repository = "araspik/sdlang.rs", branch = "master" }
+codecov = { repository = "araspik/sdlang.rs", branch = "master", service = "github" }
+is-it-maintained-issue-resolution = { repository = "araspik/sdlang.rs" }
+is-it-maintained-open-issues = { repository = "araspik/sdlang.rs" }
 maintenance = { status = "actively-developed" }
 
 # Profiles
