@@ -1,0 +1,50 @@
+[package]
+
+# General Information
+name = "sdlang"
+version = "0.0.1"
+authors = [
+    "ARaspiK <araspik@protonmail.com>"
+]
+description = "An SDLang format parser"
+license = "MIT"
+
+# Public Use Metadata
+publish = true
+documentation = "https://docs.rs/sdlang"
+homepage = "https://github.com/araspik/sdlang/blob/master/README.md"
+readme = "README.md"
+keywords = [
+    "formats",
+    "parsing",
+		"sdlang",
+]
+categories = [
+    "parsing",
+]
+
+# Code-specific Metadata
+edition = '2018'
+
+# Workspace
+
+# Public Display Badges
+[badges]
+travis-ci = { repository = "araspik/sdlang", branch = "master" }
+codecov = { repository = "araspik/sdlang", branch = "master", service = "github" }
+is-it-maintained-issue-resolution = { repository = "araspik/sdlang" }
+is-it-maintained-open-issues = { repository = "araspik/sdlang" }
+maintenance = { status = "actively-developed" }
+
+# Profiles
+
+# Dependencies
+[dependencies]
+base64 = "~0.10.1"
+chrono = "~0.4.6"
+pest = "~2.1.0"
+pest_derive = "~2.1.0"
+itertools = "~0.8.0"
+
+# Features
+[features]

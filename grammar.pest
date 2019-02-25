@@ -1,0 +1,109 @@
+//! # Pest parsing grammar
+//!
+//! Pest is really easy to use, and it forms simple parsing trees
+//!
+//! I may eventually switch to Nom if I have the time to convert everything.
+
+
+// Core items: whitespace and comments
+
+WHITESPACE = _{ " " | "\n" | "\r" | "\t" | "\\\n" }
+
+COMMENT = _{
+    "/*" ~ (!"*/" ~ ANY)* ~ "*/"
+  | ("//" | "--" | "#") ~ (!"\n" ~ ANY)* ~ "\n"
+}
+
+white = _{WHITESPACE | COMMENT}
+
+string = ${
+    "\"" ~ (
+        "\\" ~ ("\n" | "n" | "r" | "t" | "\\" | "0" | "\"" | "'")
+      | !("\"" | "\\") ~ ANY
+    )* ~ "\""
+  | "`" ~ (!"`" ~ ANY)* ~ "`"
+}
+
+date = ${
+    ('0'..'9'){4}
+  ~ "/"
+  ~ ('0'..'9'){2}
+  ~ "/"
+  ~ ('0'..'9'){2}
+}
+
+msecs = ${"." ~ ('0'..'9'){3}}
+
+time = ${
+    ('0'..'9'){2}
+  ~ ":"
+  ~ ('0'..'9'){2}
+  ~ ":"
+  ~ ('0'..'9'){2}
+  ~ msecs?
+}
+
+utc = ${"-UTC"}
+
+datetime = ${
+    date
+  ~ (WHITESPACE | COMMENT)+
+  ~ time
+  ~ utc?
+}
+
+days = ${('0'..'9')+}
+
+duration = @{
+    (days ~ "d:")?
+  ~ time
+}
+
+number_raw = ${"-"? ~ ('0'..'9')+}
+number_suffix = ${"L" | "BD"}
+number = ${
+    number_raw
+  ~ number_suffix?
+}
+
+decimal_raw = ${"-"? ~ ('0'..'9')+ ~ "." ~ ('0'..'9')+}
+decimal_suffix = ${"f"}
+decimal = ${
+    decimal_raw
+  ~ decimal_suffix?
+}
+
+bool_true = ${"true" | "on"}
+bool_false = ${"false" | "off"}
+boolean = ${bool_true | bool_false}
+
+null = ${"null"}
+
+base64_char = {'a'..'z' | 'A'..'Z' | '0'..'9' | "+" | "/" | "="}
+base64 = ${"[" ~ (base64_char | (WHITESPACE | COMMENT)+)* ~ "]"}
+
+value = ${
+    string  | base64
+  | datetime| date      | duration
+  | decimal | number
+  | boolean | null
+}
+
+ident = ${
+    !('0'..'9' | "$" | "." | "-")
+  ~ ('a'..'z' | 'A'..'Z' | '0'..'9' | "." | "$" | "-" | "_")+
+}
+
+attribute = ${ident ~ "=" ~ value}
+
+namespace = ${ident ~ ":"}
+tag = {
+    (value | namespace? ~ ident)
+  ~ value*
+  ~ attribute*
+  ~ ("{" ~ tags ~ "}")?
+}
+
+tags_sep = _{";" | "\n"}
+tags = { (tag ~ (tags_sep ~ tag?)*)? }
+tagtree = {SOI ~ tags ~ EOI}
