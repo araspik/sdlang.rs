@@ -1,6 +1,6 @@
-use crate::{Result, Error};
-use crate::{grammar, grammar::Rule};
 use crate::parse;
+use crate::{grammar, grammar::Rule};
+use crate::{Error, Result};
 
 use itertools::Itertools;
 
@@ -22,7 +22,7 @@ pub type Date = chrono::NaiveDate;
 ///
 /// It implements `FromStr` to allow direct parsing, as well as `From` for all
 /// its subtypes (except `Null`).
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Value {
     /// Text types. Both normal and raw strings come under this.
     String(String),
@@ -41,7 +41,7 @@ pub enum Value {
     /// Boolean values.
     Boolean(bool),
     /// Null.
-    Null
+    Null,
 }
 
 impl fmt::Display for Value {
@@ -51,15 +51,15 @@ impl fmt::Display for Value {
     /// the format used.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
-            Value::String(text)    => write!(f, "\"{}\"", text),
-            Value::Base64(data)    => write!(f, "{:x?}", data),
-            Value::Date(date)      => write!(f, "{}", date),
+            Value::String(text) => write!(f, "\"{}\"", text),
+            Value::Base64(data) => write!(f, "{:x?}", data),
+            Value::Date(date) => write!(f, "{}", date),
             Value::DateTime(dtime) => write!(f, "{}", dtime),
-            Value::Duration(dur)   => write!(f, "{:#?}", dur),
-            Value::Number(num)     => write!(f, "{}", num),
-            Value::Decimal(dec)    => write!(f, "{}", dec),
-            Value::Boolean(val)    => write!(f, "{}", val),
-            Value::Null            => write!(f, "null"),
+            Value::Duration(dur) => write!(f, "{:#?}", dur),
+            Value::Number(num) => write!(f, "{}", num),
+            Value::Decimal(dec) => write!(f, "{}", dec),
+            Value::Boolean(val) => write!(f, "{}", val),
+            Value::Null => write!(f, "null"),
         }
     }
 }
@@ -84,47 +84,65 @@ impl FromStr for Value {
 
 impl From<String> for Value {
     /// Creates a `Value::String` from the given string.
-    fn from(v: String) -> Self {Value::String(v)}
+    fn from(v: String) -> Self {
+        Value::String(v)
+    }
 }
 
 impl From<&str> for Value {
     /// Creates a `Value::String` from the given string, allocating.
-    fn from(v: &str) -> Self {Value::String(v.to_string())}
+    fn from(v: &str) -> Self {
+        Value::String(v.to_string())
+    }
 }
 
 impl From<Vec<u8>> for Value {
     /// Creates a `Value::Base64` from the given data.
-    fn from(v: Vec<u8>) -> Self {Value::Base64(v)}
+    fn from(v: Vec<u8>) -> Self {
+        Value::Base64(v)
+    }
 }
 
 impl From<Date> for Value {
     /// Creates a `Value::Date` from the given date.
-    fn from(v: Date) -> Self {Value::Date(v)}
+    fn from(v: Date) -> Self {
+        Value::Date(v)
+    }
 }
 
 impl From<DateTime> for Value {
     /// Creates a `Value::DateTime` from the given date and time.
-    fn from(v: DateTime) -> Self {Value::DateTime(v)}
+    fn from(v: DateTime) -> Self {
+        Value::DateTime(v)
+    }
 }
 
 impl From<Duration> for Value {
     /// Creates a `Value::Duration` from the given duration.
-    fn from(v: Duration) -> Self {Value::Duration(v)}
+    fn from(v: Duration) -> Self {
+        Value::Duration(v)
+    }
 }
 
 impl From<i128> for Value {
     /// Creates a `Value::Number` from the given integer.
-    fn from(v: i128) -> Self {Value::Number(v)}
+    fn from(v: i128) -> Self {
+        Value::Number(v)
+    }
 }
 
 impl From<f64> for Value {
     /// Creates a `Value::Decimal` from the given decimal.
-    fn from(v: f64) -> Self {Value::Decimal(v)}
+    fn from(v: f64) -> Self {
+        Value::Decimal(v)
+    }
 }
 
 impl From<bool> for Value {
     /// Creates a `Value::Boolean` from the given `bool`.
-    fn from(v: bool) -> Self {Value::Boolean(v)}
+    fn from(v: bool) -> Self {
+        Value::Boolean(v)
+    }
 }
 
 /// A value with an associated name, forming a single attribute.
@@ -134,7 +152,7 @@ impl From<bool> for Value {
 /// Conversion functions are providing for parsing and for converting to and
 /// from a `(String, Value)` tuple (useful for collecting a set of attributes
 /// into a hash map).
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub struct Attribute {
     /// The name of the attribute.
     pub name: String,
@@ -145,10 +163,7 @@ pub struct Attribute {
 impl Attribute {
     /// Creates a new Attribute.
     pub fn new(name: String, value: Value) -> Self {
-        Attribute {
-            name,
-            value,
-        }
+        Attribute { name, value }
     }
 }
 
@@ -182,10 +197,7 @@ impl From<(String, Value)> for Attribute {
     /// Useful when converting from an iterator of key-value pairs (which may
     /// originate from `HashMap::iter()`).
     fn from((k, v): (String, Value)) -> Self {
-        Attribute {
-            name: k,
-            value: v,
-        }
+        Attribute { name: k, value: v }
     }
 }
 
@@ -203,7 +215,7 @@ impl From<Attribute> for (String, Value) {
 /// optionally a subtree of tags.
 ///
 /// All data in SDLang is stored through these.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Tag {
     /// The namespace (if any) of the tag.
     pub namespace: Option<String>,
@@ -238,21 +250,39 @@ impl Tag {
         self
     }
 
+    /// Sets the namespace from an `Option`.
+    ///
+    /// `None` unsets the namespace, and `Some(name)` sets the namespace to
+    /// `name`.
+    pub fn namespace_opt(mut self, namespace: Option<String>) -> Self {
+        self.namespace = namespace;
+        self
+    }
+
     /// Sets the value list.
-    pub fn values(mut self, mut values: Vec<Value>) -> Self {
-        self.values.append(&mut values);
+    pub fn values<I>(mut self, values: I) -> Self
+    where
+        I: IntoIterator<Item = Value>,
+    {
+        self.values.extend(values);
         self
     }
 
     /// Sets the attribute list from a list of Attributes.
-    pub fn attrs(mut self, attrs: Vec<Attribute>) -> Self {
-        self.attrs.extend(attrs.into_iter().map(|a| a.into()));
+    pub fn attrs<I>(mut self, attrs: I) -> Self
+    where
+        I: IntoIterator<Item = Attribute>,
+    {
+        self.attrs.extend(attrs);
         self
     }
 
     /// Sets the child tags.
-    pub fn tags(mut self, mut tags: Vec<Tag>) -> Self {
-        self.tags.append(&mut tags);
+    pub fn tags<I>(mut self, tags: I) -> Self
+    where
+        I: IntoIterator<Item = Tag>,
+    {
+        self.tags.extend(tags);
         self
     }
 
@@ -262,8 +292,10 @@ impl Tag {
     }
 
     /// Finds the given attribute by name, returning a mutable reference.
-    pub fn attr_mut<'a, 'b>(&'a mut self, name: &'b str)
-            -> Option<&'a mut Attribute> {
+    pub fn attr_mut<'a, 'b>(
+        &'a mut self,
+        name: &'b str,
+    ) -> Option<&'a mut Attribute> {
         self.attrs.iter_mut().find(|a| a.name == name)
     }
 
@@ -273,8 +305,7 @@ impl Tag {
     }
 
     /// Finds the given tag by name, returning a mutable reference.
-    pub fn tag_mut<'a, 'b>(&'a mut self, name: &'b str)
-            -> Option<&'a mut Tag> {
+    pub fn tag_mut<'a, 'b>(&'a mut self, name: &'b str) -> Option<&'a mut Tag> {
         self.tags.iter_mut().find(|t| t.name == name)
     }
 }
@@ -291,16 +322,22 @@ impl fmt::Display for Tag {
     /// * ...
     /// ```
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
+        write!(
+            f,
             "tag \"{}\": {}{}",
-            self.namespace.iter()
+            self.namespace
+                .iter()
                 .chain(iter::once(&self.name))
                 .format(":"),
-            self.values.iter().map(|v| v.to_string())
+            self.values
+                .iter()
+                .map(|v| v.to_string())
                 .chain(self.attrs.iter().map(|a| format!("[{}]", a)))
                 .format(", "),
             self.tags.iter().format_with("", |t, f| f(&format_args!(
-                "\n* {}", t.to_string().replace('\n', "\n  ")))),
+                "\n* {}",
+                t.to_string().replace('\n', "\n  ")
+            ))),
         )
     }
 }

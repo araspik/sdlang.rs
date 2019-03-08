@@ -2,8 +2,8 @@
 //!
 //! It also prevents the need for importing Pest stuff everywhere.
 
-use pest::Span;
 use pest::error::{Error as PestErr, ErrorVariant};
+use pest::Span;
 
 pub use pest::{iterators::Pair, Parser};
 
@@ -20,7 +20,7 @@ pub type ParseTree<'input> = Pair<'input, Rule>;
 
 /// Allows creating custom error messages under Pest's errors.
 pub fn parse_err(message: String, span: Span) -> Error {
-    Error::new_from_span(ErrorVariant::CustomError {message}, span)
+    Error::new_from_span(ErrorVariant::CustomError { message }, span)
 }
 
 /// Parses the given text into a tag tree.

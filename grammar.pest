@@ -18,8 +18,8 @@ white = _{WHITESPACE | COMMENT}
 
 string = ${
     "\"" ~ (
-        "\\" ~ ("\n" | "n" | "r" | "t" | "\\" | "0" | "\"" | "'")
-      | !("\"" | "\\") ~ ANY
+        "\\" ~ ANY
+      | !"\"" ~ ANY
     )* ~ "\""
   | "`" ~ (!"`" ~ ANY)* ~ "`"
 }
@@ -90,20 +90,20 @@ value = ${
 }
 
 ident = ${
-    !('0'..'9' | "$" | "." | "-")
-  ~ ('a'..'z' | 'A'..'Z' | '0'..'9' | "." | "$" | "-" | "_")+
+	  ('a'..'z' | 'A'..'Z' | "_")
+  ~ ('a'..'z' | 'A'..'Z' | '0'..'9' | "." | "$" | "-" | "_")*
 }
 
 attribute = ${ident ~ "=" ~ value}
 
 namespace = ${ident ~ ":"}
-tag = {
-    (value | namespace? ~ ident)
-  ~ value*
-  ~ attribute*
-  ~ ("{" ~ tags ~ "}")?
+tag = ${
+    (value | namespace? ~ (!"\n" ~ white)* ~ ident)
+  ~ ((!"\n" ~ white)+ ~ value)*
+  ~ ((!"\n" ~ white)+ ~ attribute)*
+  ~ ((!"\n" ~ white)+ ~ "{" ~ white* ~ tags ~ white* ~ "}" ~ (!"\n" ~ white)*)?
 }
 
 tags_sep = _{";" | "\n"}
-tags = { (tag ~ (tags_sep ~ tag?)*)? }
+tags = { tag? ~ (tags_sep ~ tag?)* }
 tagtree = {SOI ~ tags ~ EOI}

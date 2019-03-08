@@ -55,16 +55,19 @@ extern crate base64;
 extern crate chrono;
 extern crate itertools;
 extern crate pest;
-#[macro_use] extern crate pest_derive;
+#[macro_use]
+extern crate pest_derive;
 
 // Modules
 mod grammar;
-mod types;
 mod parse;
+#[cfg(test)]
+mod tests;
+mod types;
 
 // Public types
 pub use grammar::{Error, ParseRes as Result};
-pub use types::{Value, Attribute, Tag, Date, DateTime};
+pub use types::{Attribute, Date, DateTime, Tag, Value};
 
 // Internal usage here
 use std::{io, io::Read};
@@ -75,7 +78,9 @@ use std::{io, io::Read};
 ///
 /// The reader is internally buffered using `std::io::BufReader`.
 pub fn parse_file<R>(data: R) -> io::Result<Result<Tag>>
-where R: io::Read {
+where
+    R: io::Read,
+{
     let mut res = String::new();
     io::BufReader::new(data).read_to_string(&mut res)?;
     Ok(parse_text(res.as_str()))
@@ -86,7 +91,8 @@ where R: io::Read {
 /// The name of the root tag is `""` (nothing); It has no namespace, values, or
 /// attributes; it only has a list of child tags.
 pub fn parse_text(data: &str) -> Result<Tag> {
-    Ok(Tag::new(String::new())
-        .tags(grammar::parse(grammar::Rule::tagtree, data)
-              .and_then(parse::tagtree)?))
+    Ok(Tag::new(String::new()).tags(
+        grammar::parse(grammar::Rule::tagtree, data)
+            .and_then(parse::tagtree)?,
+    ))
 }
